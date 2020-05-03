@@ -1,29 +1,59 @@
 export default class Tournament {
+    #participantsNum;
+    #toursNum;
+    #gamesInTourNum;
+    #tours = [];
+    #isOdd = false;
+
     constructor(participantsNum) {
-        this.participantsNum = +participantsNum;
-        this.isOdd = false;
+        this.setBaseValues(participantsNum);
 
-        // If the number of participants is odd
-        if (participantsNum % 2 !== 0) {
-            this.participantsNum++;
-            this.isOdd = true;
-        }
-
-        this.toursNum = this.participantsNum - 1;
-        this.gamesInTourNum = this.participantsNum / 2;
-        this.tours = [];
-
-        for (let i = 0; i < this.toursNum; i++) {
+        for (let i = 0; i < this.#toursNum; i++) {
             const data = {
                 tour: i + 1,
-                games: [],
+                games: []
             };
-            for (let j = 0; j < this.gamesInTourNum; j++) {
-                const game = { team_1: null, team_2: null };
+            for (let j = 0; j < this.#gamesInTourNum; j++) {
+                const game = {
+                    team_1: null,
+                    team_2: null
+                };
                 data.games.push(game);
             }
-            this.tours.push(data);
+            this.#tours.push(data);
         }
+
+        return new Proxy(this, {
+            get(target, prop) {
+                if (prop.startsWith('_')) {
+                    throw new Error(
+                        `Accessing to a private property "${prop}" is not allowed`);
+                }
+                let value = target[prop];
+                return (typeof value === 'function')
+                    ? value.bind(target) : value;
+            },
+        });
+    }
+
+    setBaseValues(num) {
+        this.#participantsNum = +num;
+        // If the number of participants is odd
+        if (num % 2 !== 0) {
+            this.#participantsNum++;
+            this.#isOdd = true;
+        }
+        this.#toursNum = this.#participantsNum - 1;
+        this.#gamesInTourNum = this.#participantsNum / 2;
+
+        return this;
+    }
+
+    getToursCalendar() {
+        this._makeFirstRow();
+        this._makeOtherRows();
+
+        return this.#tours;
     }
 
     // First column is formed as follows:
@@ -39,25 +69,25 @@ export default class Tournament {
     // Then the missing right or left part is filled with the max number (i.e., 8).
     // If N is odd number, the free participant is the one next to N+1
     // (i.e. in each round the whole first column is out of game, taking rest).
-    makeFirstRow() {
+    _makeFirstRow() {
         let counterFirstHalf = 0;
         let counterSecondHalf = 1;
 
-        for (let i = 1; i <= this.toursNum; i++) {
-            if (i <= this.gamesInTourNum) {
-                if (this.isOdd) {
-                    this.tours[counterFirstHalf].games[0].team_1 = i;
+        for (let i = 1; i <= this.#toursNum; i++) {
+            if (i <= this.#gamesInTourNum) {
+                if (this.#isOdd) {
+                    this.#tours[counterFirstHalf].games[0].team_1 = i;
                 } else {
-                    this.tours[counterFirstHalf].games[0].team_1 = i;
-                    this.tours[counterFirstHalf].games[0].team_2 = this.participantsNum;
+                    this.#tours[counterFirstHalf].games[0].team_1 = i;
+                    this.#tours[counterFirstHalf].games[0].team_2 = this.#participantsNum;
                 }
                 counterFirstHalf += 2;
-            } else if (i > this.gamesInTourNum && i != this.participantsNum) {
-                if (this.isOdd) {
-                    this.tours[counterSecondHalf].games[0].team_1 = i;
+            } else if (i > this.#gamesInTourNum && i != this.#participantsNum) {
+                if (this.#isOdd) {
+                    this.#tours[counterSecondHalf].games[0].team_1 = i;
                 } else {
-                    this.tours[counterSecondHalf].games[0].team_1 = this.participantsNum;
-                    this.tours[counterSecondHalf].games[0].team_2 = i;
+                    this.#tours[counterSecondHalf].games[0].team_1 = this.#participantsNum;
+                    this.#tours[counterSecondHalf].games[0].team_2 = i;
                 }
                 counterSecondHalf += 2;
             }
@@ -84,68 +114,62 @@ export default class Tournament {
     // n         - number of participants.
     // t         - number of tours (n - 1).
     // m         - number of games in one tour (n / 2).
-    makeOtherRows() {
-        let left = 2, right = this.participantsNum - 1;
+    _makeOtherRows() {
+        let left = 2,
+            right = this.#participantsNum - 1;
 
-        for (let i = 0; i < this.toursNum; i++) {
-            for (let j = 1; j <= this.gamesInTourNum - 1; j++) {
-                this.tours[i].games[j].team_1 = left;
-                this.tours[i].games[j].team_2 = right;
-                right = this.rightDecrement(right);
+        for (let i = 0; i < this.#toursNum; i++) {
+            for (let j = 1; j <= this.#gamesInTourNum - 1; j++) {
+                this.#tours[i].games[j].team_1 = left;
+                this.#tours[i].games[j].team_2 = right;
+                right = this._rightDecrement(right);
 
-                if (j < this.gamesInTourNum - 1) {
-                    left = this.leftIncrement(left);
-                } else if (j === this.gamesInTourNum - 1) {
-                    left = this.leftIncrementForLastColumn(left);
+                if (j < this.#gamesInTourNum - 1) {
+                    left = this._leftIncrement(left);
+                } else if (j === this.#gamesInTourNum - 1) {
+                    left = this._leftIncrementForLastColumn(left);
                 }
             }
         }
     }
 
-    leftIncrement(n) {
-        if (n === this.participantsNum - 1) {
+    _leftIncrement(n) {
+        if (n === this.#participantsNum - 1) {
             return 1;
         }
         return n + 1;
-        /* if (n < this.participantsNum - 1) {
+        /* if (n < this.#participantsNum - 1) {
             return n + 1;
-        } else if (n === this.participantsNum - 1) {
+        } else if (n === this.#participantsNum - 1) {
             return 1;
         } */
     }
 
-    rightDecrement(n) {
+    _rightDecrement(n) {
         if (n === 1) {
-            return this.participantsNum - 1;
+            return this.#participantsNum - 1;
         }
         return n - 1;
         /* if (n > 1) {
             return n - 1;
         } else if (n === 1) {
-            return this.participantsNum - 1;
+            return this.#participantsNum - 1;
         } */
     }
 
-    leftIncrementForLastColumn(n) {
-        if (n === this.participantsNum - 2) {
+    _leftIncrementForLastColumn(n) {
+        if (n === this.#participantsNum - 2) {
             return 1;
-        } else if (n === this.participantsNum - 1) {
+        } else if (n === this.#participantsNum - 1) {
             return 2;
         }
         return n + 2;
-        /* if (n <= this.participantsNum - 3) {
+        /* if (n <= this.#participantsNum - 3) {
             return n + 2;
-        } else if (n === this.participantsNum - 2) {
+        } else if (n === this.#participantsNum - 2) {
             return 1;
-        } else if (n === this.participantsNum - 1) {
+        } else if (n === this.#participantsNum - 1) {
             return 2;
         } */
-    }
-
-    getToursCalendar() {
-        this.makeFirstRow();
-        this.makeOtherRows();
-
-        return this.tours;
     }
 }
