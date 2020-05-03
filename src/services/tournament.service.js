@@ -9,15 +9,9 @@ export default class Tournament {
         this.setBaseValues(participantsNum);
 
         for (let i = 0; i < this.#toursNum; i++) {
-            const data = {
-                tour: i + 1,
-                games: []
-            };
+            const data = { tour: i + 1, games: [] };
             for (let j = 0; j < this.#gamesInTourNum; j++) {
-                const game = {
-                    team_1: null,
-                    team_2: null
-                };
+                const game = { team_1: null, team_2: null };
                 data.games.push(game);
             }
             this.#tours.push(data);
@@ -44,7 +38,7 @@ export default class Tournament {
             this.#isOdd = true;
         }
         this.#toursNum = this.#participantsNum - 1;
-        this.#gamesInTourNum = this.#participantsNum / 2;
+        this.#gamesInTourNum = Math.floor(this.#participantsNum / 2);
 
         return this;
     }
@@ -84,7 +78,7 @@ export default class Tournament {
                 counterFirstHalf += 2;
             } else if (i > this.#gamesInTourNum && i != this.#participantsNum) {
                 if (this.#isOdd) {
-                    this.#tours[counterSecondHalf].games[0].team_1 = i;
+                    this.#tours[counterSecondHalf].games[0].team_2 = i;
                 } else {
                     this.#tours[counterSecondHalf].games[0].team_1 = this.#participantsNum;
                     this.#tours[counterSecondHalf].games[0].team_2 = i;
