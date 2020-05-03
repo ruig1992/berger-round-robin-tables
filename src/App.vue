@@ -1,24 +1,55 @@
 <template>
   <div id="app">
-    <p><b>Кількість команд-учасниць – {{ participantsNum }}</b></p>
-    <CalendarInCols :data="calendar" />
+    <p>
+      <label>
+        <b>Кількість команд-учасниць: </b>
+        <input type="number" min="3" size="2"
+          v-model="participantsNum"
+          @change="setCalendar"
+          :disabled="isLoading"
+        >
+      </label>
+    </p>
+    <p>
+      <label>
+        <input type="checkbox"
+          v-model="isRowView"
+          :disabled="isLoading"
+        > Показати як рядки
+      </label>
+    </p>
+    <TournamentCalendar :data="calendar" :isRowView="isRowView" />
   </div>
 </template>
 
 <script>
-import CalendarInCols from './components/CalendarInCols';
+import TournamentCalendar from './components/TournamentCalendar';
 import Tournament from './services/tournament.service';
 
 export default {
   name: 'App',
-  components: { CalendarInCols }, 
+  components: { TournamentCalendar },
   data: () => ({
     participantsNum: 4,
     calendar: [],
+    isRowView: false,
+    isLoading: true,
   }),
   mounted() {
-    const tournament = new Tournament(this.participantsNum);
-    this.calendar = tournament.getToursCalendar();
+    this.setCalendar();
+  },
+  methods: {
+    setCalendar() {
+      try {
+        this.isLoading = true;
+        const tournament = new Tournament(this.participantsNum);
+        this.calendar = tournament.getToursCalendar();
+        this.isLoading = false;
+
+      } catch (error) {
+        console.error(error.message);
+      }
+    }
   },
 }
 </script>
@@ -30,11 +61,6 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
-}
-.app-calendar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  margin-top: 30px;
 }
 </style>
