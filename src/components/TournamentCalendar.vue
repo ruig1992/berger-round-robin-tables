@@ -5,7 +5,11 @@
       <ul class="app-calendar__games">
         <li v-for="(g, i) in tour.games" :key="i"
           class="app-calendar__game"
-        >{{ g.team_1 }} – {{ g.team_2 }}</li>
+        >
+          <sup>({{ g.team_1 }})</sup>
+          {{ getParticipant(g.team_1) }} – <sup>({{ g.team_2 }})</sup>
+          {{ getParticipant(g.team_2) }}
+        </li>
       </ul>
     </div>
   </div>
@@ -16,7 +20,17 @@ export default {
   name: 'TournamentCalendar',
   props: {
     data: { type: Array },
+    participants: { type: Array },
     isRowView: { type: Boolean, default: false, },
+  },
+  methods: {
+    getParticipant(num) {
+      const p = this.participants[num - 1];
+      if (!num || !p) {
+        return null;
+      }
+      return p.name_short || p.name;
+    }
   },
 }
 </script>
@@ -25,7 +39,6 @@ export default {
 .app-calendar {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
 }
 .app-calendar--row-view {
   flex-direction: column;
@@ -33,10 +46,12 @@ export default {
 }
 .app-calendar__tour {
   padding: 10px;
+  width: calc(50% - 20px);
 }
 .app-calendar--row-view .app-calendar__tour {
   display: flex;
   align-items: center;
+  width: 100%;
 }
 .app-calendar__tour-name {
   margin: 0;
