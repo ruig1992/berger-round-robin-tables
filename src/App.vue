@@ -3,6 +3,18 @@
     <div class="container">
       <div class="row">
         <div class="col-flex-1-5">
+          <form @submit.prevent="addParticipant">
+            <p><label>Назва <sup>*</sup>:
+              <input type="text" v-model.trim="form.name" required>
+              </label>
+            </p>
+            <p>Скорочена назва: {{ formNameShort }}</p>
+            <p><label>... або введіть свою
+              <input type="text" v-model.trim="form.name_short">
+              </label>
+            </p>
+            <p><button type="submit" :disabled="isLoading">Додати учасника</button></p>
+          </form>
           <section class="app-participants-section">
             <h3 class="header">Список учасників:</h3>
             <draggable
@@ -13,16 +25,12 @@
               class="app-participants-list"
               ghost-class="draggable-ghost"
               animation="200"
-              @start="isDragging=true"
-              @end="isDragging=false"
+              @start="drag=true"
+              @end="drag=false"
             >
               <li v-for="(item, index) in participants" :key="item.id"
                 class="app-participants-list__item drag-item"
               >{{ index + 1 }} - {{ item.name }}</li>
-
-              <li slot="header" class="app-participants-list__item">
-                <button @click="addParticipant">Додати учасника</button>
-              </li>
             </draggable>
           </section>
         </div>
@@ -50,25 +58,25 @@ import participantsList from './services/participant.service';
 export default {
   name: 'App',
   components: { Draggable, TournamentCalendar },
-  data: () => ({
-    participants: [],
-    calendar: [],
-    isRowView: false,
-    isLoading: true,
-
-    isDragging: false,
-    /* componentData: {
-      props: {
-        type: 'transition',
-        name: 'flip-list',
-        tag: 'ul',
-      }
-    } */
-  }),
+  data() {
+    return {
+      participants: [],
+      calendar: [],
+      isRowView: false,
+      isLoading: true,
+      form: { name: '', name_short: '' },
+    };
+  },
   computed: {
     participantsCount() {
       return this.participants.length;
-    }
+    },
+    formNameShort() {
+      const matches = this.form.name.replace(/"/g, '')
+        .split(' ').filter((m) => m);
+
+      return matches[0] === 'ФК' ? `${matches[0]} ${matches[1]}` : matches[0];
+    },
   },
   mounted() {
     this.participants = participantsList;
@@ -87,12 +95,14 @@ export default {
       }
     },
     addParticipant: function() {
-      const newId = this.participants[this.participants.length - 1].id + 1;
       this.participants.push({
-        id: newId,
-        name: `Example ${newId}`,
-        name_short: null,
+        id: Date.now(),
+        name: this.form.name,
+        name_short: this.form.name_short || this.formNameShort,
       });
+      this.form.name = '';
+      this.form.name_short = '';
+
       this.setCalendar();
     },
   },
