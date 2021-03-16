@@ -1,112 +1,98 @@
 <template>
   <div id="app">
-    <div class="container">
-      <div class="row">
-        <div class="col-flex-1-5">
-          <form @submit.prevent="addParticipant">
-            <p><label>Назва <sup>*</sup>:
-              <input type="text" v-model.trim="form.name" required>
-              </label>
-            </p>
-            <p>Скорочена назва: {{ formNameShort }}</p>
-            <p><label>... або введіть свою
-              <input type="text" v-model.trim="form.name_short">
-              </label>
-            </p>
-            <p><button type="submit" :disabled="isLoading">Додати учасника</button></p>
-          </form>
-          <section class="app-participants-section">
-            <h3 class="header">Список учасників:</h3>
-            <draggable
-              v-model="participants"
-              group="participants"
-              draggable=".drag-item"
-              tag="ul"
-              class="app-participants-list"
-              ghost-class="draggable-ghost"
-              animation="200"
-              @start="drag=true"
-              @end="drag=false"
-            >
-              <li v-for="(item, index) in participants" :key="item.id"
-                class="app-participants-list__item drag-item"
-              >{{ index + 1 }} - {{ item.name }}</li>
-            </draggable>
-          </section>
-        </div>
-        <div class="col-flex-2">
+    <b-container>
+      <b-row>
+        <b-col cols="4">
           <section>
-            <h3 class="header">Календар змагань:</h3>
-            <TournamentCalendar
+            <h2 class="h4 mb-4">Список учасників:</h2>
+            <p v-if="!participantsCount">Поки що немає учасників...</p>
+            <tournament-participants
+              v-else
+              :participants="participants"
+              @updated="updateParticipants"
+              @deleting="deleteParticipant"
+              @deleting-all="deleteAllParticipants"
+            />
+          </section>
+
+          <section class="mt-5">
+            <h2 class="h4 mb-4">Додати учасника</h2>
+            <add-participant-form
+              :is-disabled="isLoading"
+              @added="addParticipant"
+            />
+          </section>
+        </b-col>
+
+        <b-col>
+          <section>
+            <h2 class="h4 mb-4">Календар змагань</h2>
+            <tournament-calendar
               :data="calendar"
-              :isRowView="isRowView"
               :participants="participants"
             />
           </section>
-        </div>
-      </div>
-    </div>
+        </b-col>
+      </b-row>
+    </b-container>
   </div>
 </template>
 
 <script>
-import Draggable from 'vuedraggable';
-import TournamentCalendar from './components/TournamentCalendar';
-import Tournament from './services/tournament.service';
-import participantsList from './services/participant.service';
+import AddParticipantForm from '@/components/AddParticipantForm';
+import TournamentParticipants from '@/components/TournamentParticipants';
+import TournamentCalendar from '@/components/TournamentCalendar';
+import Tournament from '@/services/tournament.service';
+import {getParticipants, saveParticipants} from '@/services/participant.service';
 
 export default {
-  name: 'App',
-  components: { Draggable, TournamentCalendar },
   data() {
     return {
       participants: [],
       calendar: [],
-      isRowView: false,
-      isLoading: true,
-      form: { name: '', name_short: '' },
+      isLoading: false,
     };
-  },
-  computed: {
-    participantsCount() {
-      return this.participants.length;
-    },
-    formNameShort() {
-      const matches = this.form.name.replace(/"/g, '')
-        .split(' ').filter((m) => m);
-
-      return matches[0] === 'ФК' ? `${matches[0]} ${matches[1]}` : matches[0];
-    },
-  },
-  mounted() {
-    this.participants = participantsList;
-    this.setCalendar();
   },
   methods: {
     setCalendar() {
       try {
         this.isLoading = true;
         const tournament = new Tournament(this.participantsCount);
-        this.calendar = tournament.getToursCalendar();
+        this.calendar = tournament.getRoundsCalendar();
         this.isLoading = false;
-
       } catch (error) {
         console.error(error.message);
       }
     },
-    addParticipant: function() {
-      this.participants.push({
-        id: Date.now(),
-        name: this.form.name,
-        name_short: this.form.name_short || this.formNameShort,
-      });
-      this.form.name = '';
-      this.form.name_short = '';
-
+    addParticipant(newParticipant) {
+      this.participants.push(newParticipant);
+    },
+    updateParticipants(participants) {
+      this.participants = participants;
+    },
+    deleteParticipant(id) {
+      this.participants = this.participants.filter(p => p.id !== id);
+    },
+    deleteAllParticipants() {
+      this.participants = [];
+    },
+  },
+  mounted() {
+    this.participants = getParticipants();
+  },
+  computed: {
+    participantsCount() {
+      return this.participants.length;
+    },
+  },
+  watch: {
+    participants() {
+      saveParticipants(this.participants);
       this.setCalendar();
     },
   },
-}
+  components: {AddParticipantForm, TournamentParticipants, TournamentCalendar},
+};
 </script>
 
 <style>
@@ -116,50 +102,5 @@ export default {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
-}
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-.row {
-  display: flex;
-  flex-wrap: wrap;
-}
-.col {
-  flex: 1;
-}
-.col-flex-1-5 {
-  flex: 1.5;
-}
-.col-flex-2 {
-  flex: 2;
-}
-.header {
-  text-align: center;
-}
-.draggable-ghost {
-  opacity: 0.5;
-  background-color: #c8ebfb;
-}
-.flip-list-move {
-  transition: transform 0.5s;
-}
-.no-move {
-  transition: transform 0s;
-}
-.app-participants-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.app-participants-list {
-  list-style-type: none;
-  padding: 0;
-  font-size: 0.9em;
-}
-.app-participants-list__item {
-  padding: 10px 15px;
-  border: 1px solid #999;
-  cursor: move;
 }
 </style>

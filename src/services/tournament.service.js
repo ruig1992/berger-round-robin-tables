@@ -1,53 +1,59 @@
 export default class Tournament {
-    #participantsNum;
-    #toursNum;
-    #gamesInTourNum;
-    #tours = [];
+    #participantsCount;
+    #roundsNum;
+    #gamesInRoundNum;
+    #rounds = [];
     #isOdd = false;
 
-    constructor(participantsNum) {
-        this.setBaseValues(participantsNum);
+    constructor(participantsCount) {
+        this.setBaseValues(participantsCount);
 
-        for (let i = 0; i < this.#toursNum; i++) {
-            const data = { tour: i + 1, games: [] };
-            for (let j = 0; j < this.#gamesInTourNum; j++) {
-                const game = { team_1: null, team_2: null };
+        for (let i = 0; i < this.#roundsNum; i++) {
+            const data = {round: i + 1, games: []};
+            for (let j = 0; j < this.#gamesInRoundNum; j++) {
+                const game = {
+                    id: this._generateGameId(),
+                    team_1: null,
+                    team_2: null
+                };
                 data.games.push(game);
             }
-            this.#tours.push(data);
+            this.#rounds.push(data);
         }
 
         return new Proxy(this, {
             get(target, prop) {
                 if (prop.startsWith('_')) {
-                    throw new Error(
-                        `Accessing to a private property "${prop}" is not allowed`);
+                    throw new Error(`Accessing to a private property "${prop}" is not allowed`);
                 }
                 let value = target[prop];
-                return (typeof value === 'function')
-                    ? value.bind(target) : value;
+                return (typeof value === 'function') ? value.bind(target) : value;
             },
         });
     }
 
+    _generateGameId() {
+        return '_' + Math.random().toString(36).substr(2, 10);
+    }
+
     setBaseValues(num) {
-        this.#participantsNum = +num;
+        this.#participantsCount = +num;
         // If the number of participants is odd
         if (num % 2 !== 0) {
-            this.#participantsNum++;
+            this.#participantsCount++;
             this.#isOdd = true;
         }
-        this.#toursNum = this.#participantsNum - 1;
-        this.#gamesInTourNum = Math.floor(this.#participantsNum / 2);
+        this.#roundsNum = this.#participantsCount - 1;
+        this.#gamesInRoundNum = Math.floor(this.#participantsCount / 2);
 
         return this;
     }
 
-    getToursCalendar() {
+    getRoundsCalendar() {
         this._makeFirstRow();
         this._makeOtherRows();
 
-        return this.#tours;
+        return this.#rounds;
     }
 
     // First column is formed as follows:
@@ -67,21 +73,21 @@ export default class Tournament {
         let counterFirstHalf = 0;
         let counterSecondHalf = 1;
 
-        for (let i = 1; i <= this.#toursNum; i++) {
-            if (i <= this.#gamesInTourNum) {
+        for (let i = 1; i <= this.#roundsNum; i++) {
+            if (i <= this.#gamesInRoundNum) {
                 if (this.#isOdd) {
-                    this.#tours[counterFirstHalf].games[0].team_1 = i;
+                    this.#rounds[counterFirstHalf].games[0].team_1 = i;
                 } else {
-                    this.#tours[counterFirstHalf].games[0].team_1 = i;
-                    this.#tours[counterFirstHalf].games[0].team_2 = this.#participantsNum;
+                    this.#rounds[counterFirstHalf].games[0].team_1 = i;
+                    this.#rounds[counterFirstHalf].games[0].team_2 = this.#participantsCount;
                 }
                 counterFirstHalf += 2;
-            } else if (i > this.#gamesInTourNum && i != this.#participantsNum) {
+            } else if (i > this.#gamesInRoundNum && i !== this.#participantsCount) {
                 if (this.#isOdd) {
-                    this.#tours[counterSecondHalf].games[0].team_2 = i;
+                    this.#rounds[counterSecondHalf].games[0].team_2 = i;
                 } else {
-                    this.#tours[counterSecondHalf].games[0].team_1 = this.#participantsNum;
-                    this.#tours[counterSecondHalf].games[0].team_2 = i;
+                    this.#rounds[counterSecondHalf].games[0].team_1 = this.#participantsCount;
+                    this.#rounds[counterSecondHalf].games[0].team_2 = i;
                 }
                 counterSecondHalf += 2;
             }
@@ -106,21 +112,21 @@ export default class Tournament {
     // 4-8    5-3        6-2        7-1
     //
     // n         - number of participants.
-    // t         - number of tours (n - 1).
-    // m         - number of games in one tour (n / 2).
+    // t         - number of rounds (n - 1).
+    // m         - number of games in one round (n / 2).
     _makeOtherRows() {
-        let left = 2,
-            right = this.#participantsNum - 1;
+        let left = 2;
+        let right = this.#participantsCount - 1;
 
-        for (let i = 0; i < this.#toursNum; i++) {
-            for (let j = 1; j <= this.#gamesInTourNum - 1; j++) {
-                this.#tours[i].games[j].team_1 = left;
-                this.#tours[i].games[j].team_2 = right;
+        for (let i = 0; i < this.#roundsNum; i++) {
+            for (let j = 1; j <= this.#gamesInRoundNum - 1; j++) {
+                this.#rounds[i].games[j].team_1 = left;
+                this.#rounds[i].games[j].team_2 = right;
                 right = this._rightDecrement(right);
 
-                if (j < this.#gamesInTourNum - 1) {
+                if (j < this.#gamesInRoundNum - 1) {
                     left = this._leftIncrement(left);
-                } else if (j === this.#gamesInTourNum - 1) {
+                } else if (j === this.#gamesInRoundNum - 1) {
                     left = this._leftIncrementForLastColumn(left);
                 }
             }
@@ -128,41 +134,41 @@ export default class Tournament {
     }
 
     _leftIncrement(n) {
-        if (n === this.#participantsNum - 1) {
+        if (n === this.#participantsCount - 1) {
             return 1;
         }
         return n + 1;
-        /* if (n < this.#participantsNum - 1) {
+        /* if (n < this.#participantsCount - 1) {
             return n + 1;
-        } else if (n === this.#participantsNum - 1) {
+        } else if (n === this.#participantsCount - 1) {
             return 1;
         } */
     }
 
     _rightDecrement(n) {
         if (n === 1) {
-            return this.#participantsNum - 1;
+            return this.#participantsCount - 1;
         }
         return n - 1;
         /* if (n > 1) {
             return n - 1;
         } else if (n === 1) {
-            return this.#participantsNum - 1;
+            return this.#participantsCount - 1;
         } */
     }
 
     _leftIncrementForLastColumn(n) {
-        if (n === this.#participantsNum - 2) {
+        if (n === this.#participantsCount - 2) {
             return 1;
-        } else if (n === this.#participantsNum - 1) {
+        } else if (n === this.#participantsCount - 1) {
             return 2;
         }
         return n + 2;
-        /* if (n <= this.#participantsNum - 3) {
+        /* if (n <= this.#participantsCount - 3) {
             return n + 2;
-        } else if (n === this.#participantsNum - 2) {
+        } else if (n === this.#participantsCount - 2) {
             return 1;
-        } else if (n === this.#participantsNum - 1) {
+        } else if (n === this.#participantsCount - 1) {
             return 2;
         } */
     }
