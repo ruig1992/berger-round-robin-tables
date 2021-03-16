@@ -1,4 +1,5 @@
 # berger-round-robin-tables
+Berger round robin tables for football tournament (using Vue.js)
 
 ## Project setup
 ```
