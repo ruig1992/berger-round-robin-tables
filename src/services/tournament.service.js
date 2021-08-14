@@ -1,12 +1,13 @@
 export default class Tournament {
+    #participants;
     #participantsCount;
     #roundsNum;
     #gamesInRoundNum;
     #rounds = [];
     #isOdd = false;
 
-    constructor(participantsCount) {
-        this.setBaseValues(participantsCount);
+    constructor(participants) {
+        this.setBaseValues(participants);
 
         for (let i = 0; i < this.#roundsNum; i++) {
             const data = {round: i + 1, games: []};
@@ -14,7 +15,9 @@ export default class Tournament {
                 const game = {
                     id: this._generateGameId(),
                     team_1: null,
-                    team_2: null
+                    team_2: null,
+                    t1: null,
+                    t2: null,
                 };
                 data.games.push(game);
             }
@@ -36,10 +39,14 @@ export default class Tournament {
         return '_' + Math.random().toString(36).substr(2, 10);
     }
 
-    setBaseValues(num) {
-        this.#participantsCount = +num;
+    setBaseValues(participants) {
+        const count = participants.length;
+
+        this.#participants = participants;
+        this.#participantsCount = count;
+
         // If the number of participants is odd
-        if (num % 2 !== 0) {
+        if (count % 2 !== 0) {
             this.#participantsCount++;
             this.#isOdd = true;
         }
@@ -77,17 +84,23 @@ export default class Tournament {
             if (i <= this.#gamesInRoundNum) {
                 if (this.#isOdd) {
                     this.#rounds[counterFirstHalf].games[0].team_1 = i;
+                    this.#rounds[counterFirstHalf].games[0].t1 = this.#participants[i - 1];
                 } else {
                     this.#rounds[counterFirstHalf].games[0].team_1 = i;
                     this.#rounds[counterFirstHalf].games[0].team_2 = this.#participantsCount;
+                    this.#rounds[counterFirstHalf].games[0].t1 = this.#participants[i - 1];
+                    this.#rounds[counterFirstHalf].games[0].t2 = this.#participants[this.#participantsCount - 1];
                 }
                 counterFirstHalf += 2;
             } else if (i > this.#gamesInRoundNum && i !== this.#participantsCount) {
                 if (this.#isOdd) {
                     this.#rounds[counterSecondHalf].games[0].team_2 = i;
+                    this.#rounds[counterSecondHalf].games[0].t2 = this.#participants[i - 1];
                 } else {
                     this.#rounds[counterSecondHalf].games[0].team_1 = this.#participantsCount;
                     this.#rounds[counterSecondHalf].games[0].team_2 = i;
+                    this.#rounds[counterSecondHalf].games[0].t1 = this.#participants[this.#participantsCount - 1];
+                    this.#rounds[counterSecondHalf].games[0].t2 = this.#participants[i - 1];
                 }
                 counterSecondHalf += 2;
             }
@@ -122,6 +135,10 @@ export default class Tournament {
             for (let j = 1; j <= this.#gamesInRoundNum - 1; j++) {
                 this.#rounds[i].games[j].team_1 = left;
                 this.#rounds[i].games[j].team_2 = right;
+
+                this.#rounds[i].games[j].t1 = this.#participants[left - 1];
+                this.#rounds[i].games[j].t2 = this.#participants[right - 1];
+
                 right = this._rightDecrement(right);
 
                 if (j < this.#gamesInRoundNum - 1) {

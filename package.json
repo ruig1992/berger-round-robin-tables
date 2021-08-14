@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "serve": "npx vue-cli-service serve",
+    "dev-build": "npx vue-cli-service build --mode development",
     "build": "npx vue-cli-service build",
     "lint": "npx vue-cli-service lint",
     "test": "npx mocha -r esm"
@@ -13,6 +14,7 @@
     "bootstrap-vue": "^2.17.3",
     "core-js": "^3.6.4",
     "vue": "^2.6.12",
+    "vue-sweetalert2": "^5.0.2",
     "vuedraggable": "^2.24.1"
   },
   "devDependencies": {
